@@ -20,8 +20,10 @@ namespace AzurePublishHelpers
         public string SolutionConfiguration { get; set; }
         public string ServiceConfiguration { get; set; }
         public bool AppendTimestampToDeploymentLabel { get; set; }
-        public bool AllowUpgrade { get; set; }
         public bool EnableRemoteDesktop { get; set; }
+        public string AzureDeploymentReplacementMethod { get; set; }
+        public bool AzureDeleteDeploymentOnFailure { get; set; }
+        public bool AzureFallbackToDeleteAndRecreateIfUpgradeFails { get; set; }
     }
 }
 
