@@ -1,15 +1,7 @@
-## AzurePublishHelpers for Azure 1.7 SDK
+## AzurePublishHelpers for Azure SDK 1.7
 
-Technologies
-MSBuild, Windows Azure, Visual Studio 2010
-Topics
-Windows Azure, ALM, Build & Deployment
-Last Updated
-12/5/2011
-License
-Apache License, Version 2.0
-View this sample online
-Introduction
+This project provides functionality to allow users to deploy web applications with the Azure 1.7 SDK through some CI means.
+It is a fork of the functionality and tutorial originally provided by Tom Hollander.
 
 Once you install the Windows Azure SDK on your development machine, it's easy to deploy your application to Windows Azure. However while this approach is fine for individual developers, project teams often prefer to build and deploy their code centrally on a build server. This improves the predictability of the build and deployment process, and also allows you to complete other tasks as a part of your build, such as running unit tests, deploying a database of versioning assemblies.
 
@@ -18,17 +10,19 @@ Sample Contents
 
 This sample contains the following files and projects:
 
-    AzureDeploy.targets: An MSBuild Targets file which will automatically package your Windows Azure projects and call a PowerShell script to deploy it to the cloud.
-    AzureDeploy.ps1: A PowerShell script to deploy a packaged Windows Azure application to the cloud.
-    ImportPublishSettings.exe: A command-line tool which can import Windows Azure credentials from a .publishsettings file so it can be used on a build server
-    AzurePublishHelpers.dll: A library of helper functions used by AzureDeploy.ps1 and ImportPublishSettings.exe. 
+AzureDeploy.ps1
+*A PowerShell script to deploy a packaged Windows Azure application to the cloud.
+ImportPublishSettings.exe
+*A command-line tool which can import Windows Azure credentials from a .publishsettings file so it can be used on a build server
+AzurePublishHelpers.dll
+*A library of helper functions used by AzureDeploy.ps1 and ImportPublishSettings.exe. 
 
 Setting up your Build
 
 To set up your build server:
 
-    Install Windows Azure SDK 1.6 (http://www.microsoft.com/windowsazure/sdk)
-    Install Windows Azure Platform PowerShell Cmdlets (http://wappowershell.codeplex.com)
+    Install Windows Azure SDK 1.7 (https://www.windowsazure.com/en-us/develop/downloads/)
+    Install Windows Azure Platform PowerShell Cmdlets (https://www.windowsazure.com/en-us/manage/downloads/)
     Compile the code in this sample (ImportPublishSettings.exe and AzurePublishHelpers.dll)
      Copy both files to C:\Build on your build server
     Install AzurePublishHelpers.dll as a PowerShell cmdlet by copying to: C:\Windows\System32\WindowsPowerShell\v1.0\Modules\AzurePublishHelpers (or C:\Windows\SysWOW64\WindowsPowerShell\v1.0\Modules\AzurePublishHelpers if you are running a 32-bit build on a 64-bit machine)
@@ -49,12 +43,7 @@ To set up your Windows Azure project ready for the build:
 
 To set up your build definition in TFS:
 
-    Open Visual Studio, connect to TFS via Team Explorer and set up a new Build Definition
-    Configure the build definition details as appropriate for your project
-    On the Process tab, Expand the Advanced group, and enter the following under "MSBuild Arguments":
-         /p:AzurePublishProfile="myServiceProduction.azurePubxml"
-       (or whatever you called your publish profile name)
-    Save the build, and kick it off! 
+	* Documentation underway
 
 More Information
 
