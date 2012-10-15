@@ -53,16 +53,25 @@ if ($publishProfile.AppendTimestampToDeploymentLabel)
     $a = Get-Date
     $buildLabel = $buildLabel + "-" + $a.ToShortDateString() + "-" + $a.ToShortTimeString()
 } 
- 
-if ((Get-PSSnapin | ?{$_.Name -eq "WAPPSCmdlets"}) -eq $null)
+
+if ((Get-Module | ?{$_.Name -eq "Azure"}) -eq $null)
 {
-  Add-PsSnapin WAPPSCmdlets
+	Import-Module 'C:\Program Files (x86)\Microsoft SDKs\Windows Azure\PowerShell\Azure\Azure.psd1'
 }
- 
+
+Set-AzureSubscription -SubscriptionName $publishProfile.ConnectionName
+
+$existingDeployment = Get-AzureDeployment -ServiceName $publishProfile.HostedServiceName -Slot $deploymentSlot
+if ($existingDeployment -ne $null)
+{
+}
+
+New-AzureDeployment -ServiceName $servicename -Package $package -Configuration $config -Slot $deploymentSlot -Label $buildLabel
+
+<#
  
 $hostedService = Get-HostedService $servicename -Certificate $cert -SubscriptionId $sub | Get-Deployment -Slot $deploymentSlot
- 
- 
+  
 if ($hostedService.Status -ne $null)
 {
     $hostedService |
@@ -89,3 +98,4 @@ $Deployment = Get-HostedService $servicename -Certificate $cert -SubscriptionId 
 Write-host Deployed to $deploymentSlot slot: $Deployment.Url
 
 if ($error) { exit 888 }
+#>
