@@ -1,9 +1,9 @@
 $error.clear()
 
 # Validation
-if ($args.length -ne 3)
+if ($args.length -ne 5)
 {
-   Write-Host "Usage: AzureDeployNew.ps1 <BuildPath> <PackageName> <PublishProfile>"
+   Write-Host "Usage: AzureDeployNew.ps1 <BuildPath> <PackageName> <PublishProfile> <Subscription> <CertificateThumbprint>"
    exit 880
 }
 
@@ -31,20 +31,9 @@ $azurePubXml = New-Object AzurePublishHelpers.AzurePubXmlHelper
 $publishProfileFullPath = Resolve-Path $args[2]
 $publishProfile = $azurePubXml.GetPublishProfile($publishProfileFullPath)
 Write-Host Using PublishProfile: $publishProfile.ConnectionName
-$azureConnections = New-Object AzurePublishHelpers.WindowsAzureConnectionsHelper
 
-# If runnning as NetworkService, explicitly set the location of the connections file
-# $azureConnections.ConnectionsFile = "c:\builds\WindowsAzureConnections.xml"
-
-$connection = $azureConnections.GetConnection($publishProfile.ConnectionName)
-if ($connection -eq $null)
-{
-    Write-Host Could not find connection $publishProfile.ConnectionName in $azureConnections.ConnectionsFile - Make sure you have imported it onto the build server.
-    exit 882
-}
-
-$sub = $connection.SubscriptionId
-$certThumbprint = $connection.CertificateThumbprint
+$sub = $args[3]
+$certThumbprint = $args[4]
 
 # For NetworkService use LocalMachine, for user accounts use CurrentUser
 $certPath = "cert:\CurrentUser\MY\" + $certThumbprint
