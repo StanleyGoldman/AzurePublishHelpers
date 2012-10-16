@@ -1,101 +1,82 @@
-$error.clear()
-
-# Validation
-if ($args.length -ne 5)
-{
-   Write-Host "Usage: AzureDeployNew.ps1 <BuildPath> <PackageName> <PublishProfile> <Subscription> <CertificateThumbprint>"
-   exit 880
-}
-
-if (!(test-path $args[0]))
-{
-   Write-Host "Invalid build path:" $args[0]
-   exit 881
-}
-
-if (!(test-path (join-path $args[0] $args[1])))
-{
-   Write-Host "Invalid package:" $args[1]
-   exit 881
-}
-
-
-if (!(test-path $args[2]))
-{
-   Write-Host "Invalid publish profile:" $args[2]
-   exit 881
-}
+[CmdletBinding()]
+Param (
+  [Parameter(Mandatory=$True,Position=0)]
+  [string]$publishProfilePath,
+  [Parameter(Mandatory=$True,Position=1)]
+  [string]$publishPath,
+  [Parameter(Mandatory=$True,Position=2)]
+  [string]$package
+)
 
 Import-Module AzurePublishHelpers
+
 $azurePubXml = New-Object AzurePublishHelpers.AzurePubXmlHelper
-$publishProfileFullPath = Resolve-Path $args[2]
+$publishProfileFullPath = Resolve-Path $publishProfilePath
 $publishProfile = $azurePubXml.GetPublishProfile($publishProfileFullPath)
 Write-Host Using PublishProfile: $publishProfile.ConnectionName
-
-$sub = $args[3]
-$certThumbprint = $args[4]
-
-# For NetworkService use LocalMachine, for user accounts use CurrentUser
-$certPath = "cert:\CurrentUser\MY\" + $certThumbprint
-Write-Host Using certificate: $certPath
-$cert = get-item $certPath
-$buildPath = $args[0]
-$packagename = $args[1]
-$serviceconfig = "ServiceConfiguration." + $publishProfile.ServiceConfiguration + ".cscfg"
-$servicename = $publishProfile.HostedServiceName
-$storageAccount = $publishProfile.StorageAccountName
-$package = join-path $buildPath $packageName
-$config = join-path $buildPath $serviceconfig
-$deploymentSlot = $publishProfile.DeploymentSlot
-$buildLabel = $publishProfile.DeploymentLabel
-if ($publishProfile.AppendTimestampToDeploymentLabel)
-{
-    $a = Get-Date
-    $buildLabel = $buildLabel + "-" + $a.ToShortDateString() + "-" + $a.ToShortTimeString()
-} 
 
 if ((Get-Module | ?{$_.Name -eq "Azure"}) -eq $null)
 {
 	Import-Module 'C:\Program Files (x86)\Microsoft SDKs\Windows Azure\PowerShell\Azure\Azure.psd1'
 }
 
+function Is-DeploymentInState{
+	Param (
+	  [Parameter(Mandatory=$True,Position=0)]
+	  [string]$serviceName,
+	  [Parameter(Mandatory=$True,Position=1)]
+	  [string]$slot,
+	  [Parameter(Mandatory=$True,Position=2)]
+	  [string]$status
+	)
+	
+	$deployment = Get-AzureDeployment -ServiceName $serviceName -Slot $slot
+	if($deployment -ne $null)
+	{
+		return $deployment.Status -eq $status
+	}
+	
+	return $False;
+}
+
+function Wait-ForDeploymentInState {
+	Param (
+	  [Parameter(Mandatory=$True,Position=0)]
+	  [string]$serviceName,
+	  [Parameter(Mandatory=$True,Position=1)]
+	  [string]$slot,
+	  [Parameter(Mandatory=$True,Position=2)]
+	  [string]$status
+	)
+
+    while ( -not $(Is-DeploymentInState $serviceName $slot $status) ) {
+		Write-Host "Waiting"
+        Start-Sleep -s 15
+    }
+}
+
 Set-AzureSubscription -SubscriptionName $publishProfile.ConnectionName
 
-$existingDeployment = Get-AzureDeployment -ServiceName $publishProfile.HostedServiceName -Slot $deploymentSlot
+$existingDeployment = Get-AzureDeployment -ServiceName $publishProfile.HostedServiceName -Slot $publishProfile.DeploymentSlot
 if ($existingDeployment -ne $null)
 {
+	Set-AzureDeployment -Status -ServiceName $publishProfile.HostedServiceName -Slot $publishProfile.DeploymentSlot -NewStatus "Suspended"
+
+	Wait-ForDeploymentInState $publishProfile.HostedServiceName $publishProfile.DeploymentSlot "Suspended"
+
+	Remove-AzureDeployment -ServiceName $publishProfile.HostedServiceName -Slot $publishProfile.DeploymentSlot -Force
 }
 
-New-AzureDeployment -ServiceName $servicename -Package $package -Configuration $config -Slot $deploymentSlot -Label $buildLabel
-
-<#
- 
-$hostedService = Get-HostedService $servicename -Certificate $cert -SubscriptionId $sub | Get-Deployment -Slot $deploymentSlot
-  
-if ($hostedService.Status -ne $null)
+$buildLabel = $publishProfile.DeploymentLabel
+if ($publishProfile.AppendTimestampToDeploymentLabel)
 {
-    $hostedService |
-      Set-DeploymentStatus 'Suspended' |
-      Get-OperationStatus -WaitToComplete
-    $hostedService |
-      Remove-Deployment |
-      Get-OperationStatus -WaitToComplete
+    $a = Get-Date
+    $buildLabel = $buildLabel + "-" + $a.ToShortDateString() + "-" + $a.ToShortTimeString()
 }
- 
- 
-Get-HostedService $servicename -Certificate $cert -SubscriptionId $sub |
-    New-Deployment $deploymentSlot -package $package -configuration $config -label $buildLabel -serviceName $servicename -StorageServiceName $storageAccount |
-    Get-OperationStatus -WaitToComplete
- 
- 
-Get-HostedService $servicename -Certificate $cert -SubscriptionId $sub | 
-    Get-Deployment -Slot $deploymentSlot | 
-    Set-DeploymentStatus 'Running' | 
-    Get-OperationStatus -WaitToComplete
-  
- 
-$Deployment = Get-HostedService $servicename -Certificate $cert -SubscriptionId $sub | Get-Deployment -Slot $deploymentSlot
-Write-host Deployed to $deploymentSlot slot: $Deployment.Url
 
-if ($error) { exit 888 }
-#>
+$packagePath = $publishPath + $package
+$configurationPath = [string]::Format("{0}ServiceConfiguration.{1}.cscfg", $publishPath, $publishProfile.ServiceConfiguration)
+
+New-AzureDeployment -ServiceName $publishProfile.HostedServiceName -Package $packagePath -Configuration $configurationPath -Slot $publishProfile.DeploymentSlot -Label $buildLabel
+
+Wait-ForDeploymentInState $publishProfile.HostedServiceName $publishProfile.DeploymentSlot "Running"
