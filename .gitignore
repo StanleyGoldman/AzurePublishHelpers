@@ -3,3 +3,5 @@
 bin
 obj
 _Resharper*
+/AzurePublishHelpers/PublishProfileReader/bin
+/AzurePublishHelpers/PublishProfileReader/bin
