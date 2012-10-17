@@ -29,6 +29,7 @@ namespace AzurePublishHelpers.PublishSettingsCreator
             
             var certificateStore = new X509Store(certificateStoreName, certificateStoreLocation);
             certificateStore.Open(OpenFlags.ReadOnly);
+            
             var certificates = certificateStore.Certificates;
             var matchingCertificates = certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
             if (matchingCertificates.Count == 0)
@@ -39,18 +40,21 @@ namespace AzurePublishHelpers.PublishSettingsCreator
             {
                 var certificate = matchingCertificates[0];
                 var certificateData = Convert.ToBase64String(certificate.Export(X509ContentType.Pkcs12, string.Empty));
+                
                 if (string.IsNullOrWhiteSpace(subscriptionName))
                 {
                     subscriptionName = subscriptionId;
                 }
-                string publishSettingsFileData = string.Format(publishFileFormat, certificateData, subscriptionId, subscriptionName);
-                string fileName = Environment.CurrentDirectory + subscriptionId + ".publishsettings";
+                
+                var publishSettingsFileData = string.Format(publishFileFormat, certificateData, subscriptionId, subscriptionName);
+                var fileName = string.Format(@"{0}\{1}.publishsettings", Environment.CurrentDirectory, subscriptionId);
+                
                 File.WriteAllBytes(fileName, Encoding.UTF8.GetBytes(publishSettingsFileData));
                 Console.WriteLine("Publish settings file written successfully at: " + fileName);
             }
+            
             Console.WriteLine("Press any key to terminate the program.");
             Console.ReadLine();
         }
     }
-
 }
