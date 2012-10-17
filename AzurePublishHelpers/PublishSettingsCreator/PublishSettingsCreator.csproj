@@ -7,7 +7,7 @@
     <ProjectGuid>{61E64CBD-5B47-43F4-B037-A763CAF6E847}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PublishSettingsCreator</RootNamespace>
+    <RootNamespace>AzurePublishHelpers.PublishSettingsCreator</RootNamespace>
     <AssemblyName>PublishSettingsCreator</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

@@ -8,11 +8,10 @@ Param (
   [string]$package
 )
 
-Import-Module AzurePublishHelpers
+Import-Module PublishProfileReader
 
-$azurePubXml = New-Object AzurePublishHelpers.AzurePubXmlHelper
 $publishProfileFullPath = Resolve-Path $publishProfilePath
-$publishProfile = $azurePubXml.GetPublishProfile($publishProfileFullPath)
+$publishProfile = [AzurePublishHelpers.PublishProfileReader.PublishProfileHelper]::GetPublishProfile($publishProfileFullPath)
 Write-Host Using PublishProfile: $publishProfile.ConnectionName
 
 if ((Get-Module | ?{$_.Name -eq "Azure"}) -eq $null)

@@ -1,20 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace PublishSettingsCreator
+namespace AzurePublishHelpers.PublishSettingsCreator
 {
     class Program
     {
-        private static string subscriptionId = "ecd7cc1d-12ac-4cf6-a90b-0cf14db36020";
-        private static string subscriptionName = "JustAProgrammer Azure";
-        private static string certificateThumbprint = "2AC582102355D87142E399518AFBE75F4B7B3D74";
-        private static StoreLocation certificateStoreLocation = StoreLocation.CurrentUser;
-        private static StoreName certificateStoreName = StoreName.My;
-        private static string publishFileFormat = @"<?xml version=""1.0"" encoding=""utf-8""?>
+        private const StoreLocation certificateStoreLocation = StoreLocation.CurrentUser;
+        private const StoreName certificateStoreName = StoreName.My;
+        private const string publishFileFormat = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <PublishData>
   <PublishProfile
     PublishMethod=""AzureServiceManagementAPI""
@@ -28,9 +23,13 @@ namespace PublishSettingsCreator
 
         static void Main(string[] args)
         {
-            X509Store certificateStore = new X509Store(certificateStoreName, certificateStoreLocation);
+            var subscriptionName = args[0];
+            var subscriptionId = args[1];
+            var certificateThumbprint = args[2];
+            
+            var certificateStore = new X509Store(certificateStoreName, certificateStoreLocation);
             certificateStore.Open(OpenFlags.ReadOnly);
-            X509Certificate2Collection certificates = certificateStore.Certificates;
+            var certificates = certificateStore.Certificates;
             var matchingCertificates = certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
             if (matchingCertificates.Count == 0)
             {
@@ -45,7 +44,7 @@ namespace PublishSettingsCreator
                     subscriptionName = subscriptionId;
                 }
                 string publishSettingsFileData = string.Format(publishFileFormat, certificateData, subscriptionId, subscriptionName);
-                string fileName = Path.GetTempPath() + subscriptionId + ".publishsettings";
+                string fileName = Environment.CurrentDirectory + subscriptionId + ".publishsettings";
                 File.WriteAllBytes(fileName, Encoding.UTF8.GetBytes(publishSettingsFileData));
                 Console.WriteLine("Publish settings file written successfully at: " + fileName);
             }
