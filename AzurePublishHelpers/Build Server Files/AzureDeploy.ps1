@@ -5,7 +5,9 @@ Param (
   [Parameter(Mandatory=$True,Position=1)]
   [string]$publishPath,
   [Parameter(Mandatory=$True,Position=2)]
-  [string]$package
+  [string]$package,
+  [Parameter(Mandatory=$False,Position=3)]
+  [string]$buildTag
 )
 
 Import-Module PublishProfileReader
@@ -66,12 +68,18 @@ if ($existingDeployment -ne $null)
 	Remove-AzureDeployment -ServiceName $publishProfile.HostedServiceName -Slot $publishProfile.DeploymentSlot -Force
 }
 
-$buildLabel = $publishProfile.DeploymentLabel
+$buildLabelArray = @($publishProfile.DeploymentLabel)
+if (! [string]::IsNullOrEmpty($buildTag))
+{
+	$buildLabelArray += $buildTag
+}
 if ($publishProfile.AppendTimestampToDeploymentLabel)
 {
     $a = Get-Date
-    $buildLabel = $buildLabel + "-" + $a.ToShortDateString() + "-" + $a.ToShortTimeString()
+    $buildLabelArray += ($a.ToShortDateString() + "-" + $a.ToShortTimeString())
 }
+
+$buildLabel = [string]::Join(" - ", $buildLabelArray)
 
 $packagePath = $publishPath + $package
 $configurationPath = [string]::Format("{0}ServiceConfiguration.{1}.cscfg", $publishPath, $publishProfile.ServiceConfiguration)
